@@ -1,5 +1,10 @@
 import numpy as np
 import pandas as pd
+from tpot import TPOTClassifier
+from sklearn.linear_model import LogisticRegression
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.ensemble import AdaBoostClassifier
+
 
 pd.set_option('display.max_columns', None)
 pd.set_option('display.max_rows', None)
@@ -113,16 +118,32 @@ from sklearn.model_selection import train_test_split
 train_x, test_x, train_y, test_y = train_test_split(source_x, source_y, train_size=0.8)
 print('训练数据特征', train_x.shape, '训练数据标签', train_y.shape)
 print('测试数据特征', test_x.shape, '测试数据标签', test_y.shape)
-from sklearn.linear_model import LogisticRegression
 
-model = LogisticRegression(solver='liblinear')
-print(model.fit(train_x, train_y))
-print(model.score(test_x,test_y))
-pre_y=model.predict(pre_x)
-pre_y=pre_y.astype('int')
+#tpot自动机挑选最佳模型
+tpot = TPOTClassifier(generations=5, population_size=20, verbosity=2)
+tpot.fit(train_x, train_y)
+print(tpot.score(test_x, test_y))
+tpot.export('tpot_Titanic_pipeline.py')
+
+#逻辑回归模型
+model1 = LogisticRegression(solver='liblinear')
+model1.fit(train_x, train_y)
+print(model1.score(test_x, test_y))
+#K最邻近模型
+model2 = KNeighborsClassifier()
+model2.fit(train_x, train_y)
+print(model2.score(test_x, test_y))
+#AdaBoost模型
+model3 = AdaBoostClassifier()
+model3.fit(train_x, train_y)
+print(model3.score(test_x, test_y))
+
+
+pre_y = model1.predict(pre_x)
+pre_y = pre_y.astype('int')
 print(pre_y)
-Passenger_ID=full.loc[sourceRow:,'PassengerId']
-preDF=pd.DataFrame({'PassengerId':Passenger_ID,
-                    'Survived':pre_y})
+Passenger_ID = full.loc[sourceRow:, 'PassengerId']
+preDF = pd.DataFrame({'PassengerId': Passenger_ID,
+                      'Survived': pre_y})
 print(preDF.head())
-preDF.to_csv('titanic_predict.csv',index=False)
+preDF.to_csv('titanic_predict.csv', index=False)
